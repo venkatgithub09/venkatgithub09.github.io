@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Covid Imapct Visualization - USA</title>
+    <meta charset="utf-8">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+	<style type="text/css">
+
+h1 {text-align: center;
+background-color:aliceblue;
+}
+
+/* On mouse hover, lighten state color */
+path:hover {
+	fill-opacity: .7;
+}
+
+/* Style for Custom Tooltip */
+.tooltip {   
+ 	position: absolute;           
+	text-align: center;           
+	width: auto;                  
+	height: auto;                 
+	padding: 2px;             
+	font: 12px sans-serif;        
+	background: white;   
+	border: 0px;      
+	border-radius: 8px;           
+	pointer-events: none;         
+}
+
+
+/* Legend Font Style */
+body {
+	font: 11px sans-serif;
+}
+
+/* Legend Position Style */
+.legend {
+	position:absolute;
+	left:800px;
+	top:350px;
+}
+
+</style>
+
+</head>
+<body>
+
+<h1> Covid Imapct Visualization - USA</h1> 
+
+
+
+<p style="font-family:calibri;font-size:130%" align="justify"><br>Coronavirus disease 2019 (COVID-19) is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2). 
+It was first identified in December 2019 in Wuhan, Hubei, China, and has resulted in an ongoing pandemic. As of 2 August 2020, more than 17.8 million cases have been reported across 188 countries and territories, 
+resulting in more than 685,000 deaths. More than 10.5 million people have recovered.</p>
+
+<p style="font-family:calibri;font-size:130%" align="justify"><br>The following map shows the covid impact on USA. The map is color coded to represent the severity of the impact on different states in terms of total number of cases.
+<b>The most impacted states are Newyork, Florida, Texas and California with high number of total cases. Newyork reported highest number of deaths as it was hit early</b> 
+Hover over the states of the map for following details – 1) number of cumulative total cases 2) number of cumulative cases per 100k population 3) number of cumulative deaths and 
+d) number of cumulative deaths per 100k population reported for each state. Take a look at the Linear legend scale placed on right side of the map to make sense of numbers against the color code.</p>
+
+<form action="Covid_Trends_New.html" style="float: right"> <input type="submit" value="Next Slide"/> </form>
+
+
+
+<div id="my_dataviz"></div>
+
+<p style="font-family:calibri;font-size:100%" align="justify">Dataset source from Johns Hopkins University and CDC </p>
+
+<script type="text/javascript">
+
+//Define Width and height of map
+var width = 1200;
+var height = 600;
+
+// D3 Projection - USA
+var projection = d3.geoAlbersUsa()
+				   .translate([width/2.1, height/2])    // translate to center of screen
+				   .scale([1200]);          // scale things down so see entire US
+			
+// Define path generator
+var path = d3.geoPath()               // path generator that will convert GeoJSON to SVG paths
+		  	 .projection(projection);  // tell path generator to use albersUsa projection
+
+//Create SVG element and append map to the SVG
+var svg = d3.select("#my_dataviz")
+			.append("svg")
+			.attr("width", width)
+			.attr("height", height);
+			
+
+// Append Div for tooltip to SVG
+var div = d3.select("#my_dataviz")
+		    .append("div")   
+    		.attr("class", "tooltip")               
+    		.style("opacity", 0);
+			
+			  
+// Load in my states data!
+d3.csv("https://raw.githubusercontent.com/venkatgithub09/covid-d3-project/master/US-Covid_totals_State.csv", function(data) {
+
+
+d3.json("https://raw.githubusercontent.com/venkatgithub09/covid-d3-project/master/us-states.json", function(json) {
+
+var list_total = [];
+// Loop through each state data value in the .csv file
+for (var i = 0; i < data.length; i++) {
+
+	// Grab State Name
+	var dataState = data[i].State;
+	var totaldeaths = data[i].Deaths;
+	var totalcases = data[i].Total_Cases;
+	
+	
+	list_total.push(parseFloat(totalcases))
+		// Find the corresponding state inside the GeoJSON
+	for (var j = 0; j < json.features.length; j++)  {
+		var jsonState = json.features[j].properties.NAME;
+
+		if (dataState == jsonState) {
+
+		// Copy the data value into the JSON
+		json.features[j].properties.totaldeaths = totaldeaths; 
+		json.features[j].properties.totalcases = totalcases; 
+		// Stop looking through the JSON
+		break;
+		}
+	}
+}
+
+var min = d3.min(list_total);
+var max = d3.max(list_total);
+
+
+// Define color scale based on Total number of cases
+
+
+
+var colorScale = d3.scaleLinear().domain([min,max]).range(['#ffffe0','#ff0000']);
+
+var mouseover = function(d) {
+			var info  = "<span style='color:#0033cc'><b> State : </b><b>" + d.properties.NAME + "</b></span><br/>" +
+                        "<span style='color:#ff6600'><b> Total Cases: </b>" + d.properties.totalcases + "</span></br>" +
+                        "<span style='color:#ff0000'><b> Total Deaths: </b>" + d.properties.totaldeaths + "</span></br>" 
+                                ;
+
+                    div.html(info)
+                        .style("left", (d3.event.pageX + 14) + "px")
+                        .style("top", (d3.event.pageY - 27) + "px")
+                        .transition()
+                        .duration(200) 
+                        .style("opacity", .8) 
+
+        }
+
+// Bind the data to the SVG and create one path per GeoJSON feature
+svg.selectAll("path")
+	.data(json.features)
+	.enter()
+	.append("path")
+	.attr("d", path)
+	.style("stroke", "#4e2c7f")
+	.style("stroke-width", "1")
+	.style("fill", function(d) {
+		return colorScale(d.properties.totalcases) })
+	.on("mouseover", mouseover)
+    .on("mouseout", function(d) {
+                    div.transition()
+                        .duration(400)
+                        .style("opacity", 0);
+        });
+		
+		
+//Annotation	     
+
+ 
+        
+        // text for annotation
+        svg.append("text")
+            .attr("x",900)
+            .attr("y",525)
+            .attr("font-family","sans-serif")
+            .attr("font-size",12)
+            .style("fill", "red")
+            .style("text-decoration", "underline")
+            .text("Hover on each state to see the statistics");
+            
+
+	// add a bar legend to reprsent the color shade of map
+	
+	legend_height = 550
+	legend_width = 130
+	
+	    
+    // Linear scale for y-axis
+  //  const yScale = d3.scale.Linear().domain([0, max]).range([legend_height, 0]);
+	 
+	 //Create SVG element and append map to the SVG
+	var k_svg = d3.select("#my_dataviz")
+			.append("svg")
+			.attr("width", legend_width)
+			.attr("height", legend_height)
+			.attr("class", "legend")
+     		.attr("transform", "translate(180,-20)");
+	
+	var legend = k_svg.append("defs")
+	            .append("svg:linearGradient")
+			    .attr("id", "gradient")
+				.attr("x1", "100%")
+				.attr("y1", "0%")
+				.attr("x2", "100%")
+				.attr("y2", "100%");
+
+
+   legend.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", "#ff0000")
+                .attr("stop-opacity", 1);
+
+            legend.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", "#ffffe0")
+                .attr("stop-opacity", 1);
+
+		k_svg.append("rect")
+			.attr("width", legend_width-102)
+			.attr("height", legend_height/2)
+			.style("fill", "url(#gradient)")
+			.attr("transform", "translate(55,0)");
+	
+            var y = d3.scaleLinear().range([legend_height/2, 0]).domain([0, max]);
+
+            var yAxis = d3.axisRight(y);
+
+            k_svg.append("g")
+                .attr("class", "y axis")
+                .attr("transform", "translate(85,0)")
+                .call(yAxis)
+
+
+        });
+});	
+
+// syntax references were taken from https://www.d3-graph-gallery.com/
+
+</script>
+</body>
+</html>
