@@ -57,7 +57,7 @@ body {
 We can also obsevere that death rate is more in Males compared to Females, however we can see death rate for females of 85 and above age is more compared to males.</p>
 
 <form action="Covid_US map.html" style="float: right"> <input type="submit" value="Start over"/> </form>
-<form action="Covid_Trends_New.html" style="float: right"> <input type="submit" value="Prev Slide"/> </form>
+<form action="index.html" style="float: right"> <input type="submit" value="Prev Slide"/> </form>
 
 <div id="my_dataviz1"></div>
 <p style="font-family:calibri;font-size:100%" align="justify">Dataset source from Johns Hopkins University and CDC </p>
@@ -96,7 +96,7 @@ var yAxis1 = svg_age1.append("g")
  
 			
 
- d3.csv("https://raw.githubusercontent.com/venkatgithub09/covid-d3-project/master/Covid_deaths_Age_Sex.csv", function(data) {
+ d3.csv("Covid_deaths_Age_Sex.csv", function(data) {
  
    // List of subgroups = header of the csv files = soil condition here
 

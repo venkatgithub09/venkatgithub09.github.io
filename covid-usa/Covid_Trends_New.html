@@ -162,7 +162,7 @@ var div = d3.select("#my_dataviz")
 
 function update(inputVar) {
 
-d3.csv("https://raw.githubusercontent.com/venkatgithub09/covid-d3-project/master/US_Daily_covid_trends.csv", function(data) {
+d3.csv("US_Daily_covid_trends.csv", function(data) {
 
   // Create the X axis:
   x.domain(d3.extent(data, function(d) { return new Date(d.Date); }));
