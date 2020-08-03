@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Covid Death trend - AGE groups</title>
+    <meta charset="utf-8">
+    <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+	<style type="text/css">
+
+/* On mouse hover, lighten state color */
+path:hover {
+	fill-opacity: .7;
+}
+
+h1 {text-align: center;
+background-color:aliceblue;
+}
+
+/* Style for Custom Tooltip */
+.tooltip {   
+ 	position: absolute;           
+	text-align: center;           
+	width: auto;                  
+	height: auto;                 
+	padding: 2px;             
+	font: 12px sans-serif;        
+	background: white;   
+	border: 0px;      
+	border-radius: 8px;           
+	pointer-events: none;         
+}
+
+
+/* Legend Font Style */
+body {
+	font: 11px sans-serif;
+}
+
+/* Legend Position Style */
+.legend {
+	position:absolute;
+	left:800px;
+	top:350px;
+}
+
+ .tooltip-date, .tooltip-likes {
+        font-weight: bold;
+    }
+	
+</style>
+
+</head>
+<body>
+
+<h1> Covid Death trends by Age & Sex</h1> 
+
+<p style="font-family:calibri;font-size:130%" align="justify"><br>Covid-19 virus disproportionately affected the older people. The following visualization reveals that older people deaths are more compared to other ages. The deaths in kids and younger people is less although they were infected.
+We can also obsevere that death rate is more in Males compared to Females, however we can see death rate for females of 85 and above age is more compared to males.</p>
+
+<form action="Covid_US map.html" style="float: right"> <input type="submit" value="Start over"/> </form>
+<form action="Covid_Trends_New.html" style="float: right"> <input type="submit" value="Prev Slide"/> </form>
+
+<div id="my_dataviz1"></div>
+<p style="font-family:calibri;font-size:100%" align="justify">Dataset source from Johns Hopkins University and CDC </p>
+<script>
+
+// set the dimensions and margins of the graph
+var margin1 = {top: 70, right: 150, bottom: 60, left: 60},
+    width1 = 900 - margin1.left - margin1.right,
+    height1 = 450 - margin1.top - margin1.bottom;
+	
+
+// append the svg object to the body of the page
+var svg_age1 = d3.select("#my_dataviz1")
+  .append("svg")
+    .attr("width", width1 + margin1.left + margin1.right + 100)
+    .attr("height", height1 + margin1.top + margin1.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin1.left + "," + margin1.top + ")");
+
+// Add X axis --> it is a date format
+//var x1 = d3.scaleTime().range([ 0, width1 ]);
+//var xAxis1 = d3.axisBottom().scale(x1);
+
+     // Initialize the X axis
+var x1 = d3.scaleBand().range([ 0, width1 ]).padding([0.2]);
+var xAxis1 = svg_age1.append("g").attr("transform", "translate(0," + height1 + ")")
+			
+ 
+			
+// Add Y axis
+var y1 = d3.scaleLinear().range([height1, 0 ]);
+var yAxis1 = svg_age1.append("g")
+  .attr("class","myYaxis")
+  
+ 
+			
+
+ d3.csv("https://raw.githubusercontent.com/venkatgithub09/covid-d3-project/master/Covid_deaths_Age_Sex.csv", function(data) {
+ 
+   // List of subgroups = header of the csv files = soil condition here
+
+  var subgroups = data.columns.slice(1,3)
+  
+ 
+    // List of groups = species here = value of the first column called group -> I show them on the X axis
+  var groups = d3.map(data, function(d){return(d.Group)}).keys()
+
+ 
+ // Add X axis
+	x1.domain(groups);
+      
+	 xAxis1.transition()
+    .duration(1000)
+    .call(d3.axisBottom(x1))
+	.selectAll("text")
+    .attr("transform", "translate(0,0)rotate(-15)")
+    .style("text-anchor", "end");
+	
+	
+ // text label for the x axis
+     svg_age1.append("text")
+                .attr("transform",
+                    "translate(" + (width1/2) + " ," +
+                    (height1 + margin1.top) + ")")
+                .style("text-anchor", "middle")
+                .text("Age Group");
+// create the Y axis
+//  y1.domain([0, d3.max(data, function(d) { return +d[inputVar];   }) ]);
+
+    y1.domain([0, d3.max(data, function(d) { return +(d.Male) * 2.3 }) ])
+  	yAxis1.transition().duration(1000).call(d3.axisLeft(y1));
+  // Add Y axis
+//  var y = d3.scaleLinear()
+//    .domain([0, d3.max(data, function(d) { return +(d.DeathsMale) * 2 }) ])
+//    .range([ height1, 0 ]);
+//  svg_age.append("g")
+ //   .call(d3.axisLeft(y));
+ 
+ 	svg_age1.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin1.left)
+                .attr("x",0 - (height1 / 2))
+                .attr("dy", "1em")
+                .style("text-anchor", "middle")
+                .text("Total Deaths");
+
+  // color palette = one color per subgroup
+  var color = d3.scaleOrdinal()
+    .domain(subgroups)
+    .range(['#C7EFCF','#FE5F55','#EEF5DB'])
+	
+	
+  //stack the data? --> stack per subgroup
+  var stackedData = d3.stack()
+    .keys(subgroups)
+    (data)
+	
+	// ----------------
+  // Create a tooltip
+  // ----------------
+  var tooltip = d3.select("#my_dataviz1")
+    .append("div")
+    .style("opacity", 0)
+    .attr("class", "tooltip")
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "2px")
+    .style("border-radius", "5px")
+    .style("padding", "10px")
+
+
+    // Three function that change the tooltip when user hover / move / leave a cell
+  var mouseover = function(d) {
+    var subgroupName = d3.select(this.parentNode).datum().key;
+    var subgroupValue = d.data[subgroupName];
+    tooltip
+        .html("subgroup: " + subgroupName + "<br>" + "Value: " + subgroupValue)
+        .style("opacity", 1)
+  }
+  var mousemove = function(d) {
+    tooltip
+      .style("left", (d3.mouse(this)[0]+90) + "px") 
+      .style("top", (d3.mouse(this)[1]) + "px")
+  }
+  var mouseleave = function(d) {
+    tooltip
+      .style("opacity", 0)
+  }
+  
+ // Show the bars
+  svg_age1.append("g")
+    .selectAll("g")
+    .data(stackedData)
+    .enter().append("g")
+      .attr("fill", function(d) { return color(d.key); })
+      .selectAll("rect")
+      // enter a second time - loop subgroup per subgroup to add all rectangles
+      .data(function(d) { return d; })
+      .enter().append("rect")
+        .attr("x", function(d) { return x1(d.data.Group); })
+        .attr("y", function(d) { return y1(d[1]); })
+        .attr("height", function(d) { return y1(d[0]) - y1(d[1]); })
+        .attr("width",x1.bandwidth())
+        .attr("stroke", "grey")
+      .on("mouseover", mouseover)
+      .on("mousemove", mousemove)
+      .on("mouseleave", mouseleave)
+
+
+	
+  })
+ 
+  //Create arrow for annotation
+        svg_age1.append("svg:defs").append("svg:marker")
+            .attr("id", "lineant")
+            .attr("refX", 6)
+            .attr("refY", 6)
+            .attr("markerWidth", 20)
+            .attr("markerHeight", 20)
+            .attr("markerUnits","userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 12 6 0 12 3 6")
+            .style("fill", "red");
+
+        // circle for annotation
+
+        svg_age1.append("circle")
+            .attr("cx", 600)
+            .attr("cy", 130)
+            .attr("r", 150)
+            .style("stroke", "red")
+            .style("stroke-width",5)
+            .style("stroke-dasharray", ("3, 3"))
+            .style("fill","none");
+
+
+        //line for annotation
+        svg_age1.append("line")
+            .attr("x1", 250)
+            .attr("y1", 30)
+            .attr("x2", 445)
+            .attr("y2", 90)
+
+            .attr("stroke-width", 2)
+            .attr("stroke", "red")
+            .attr("marker-end", "url(#lineant)");
+			
+		svg_age1.append("text")
+            .attr("x",160)
+            .attr("y",10)
+            .attr("font-family","courier")
+            .attr("font-size",13)
+            .style("fill", "red")
+            .text("More Deaths Reported in Older people")
+			
+		svg_age1.append("text")
+            .attr("x",105)
+            .attr("y",25)
+            .attr("font-family","courier")
+            .attr("font-size",13)
+            .style("fill", "red")
+            .text("More Deaths Reported in Males compared to Females")
+			
+			
+	// Add legend
+	svg_age1.append("circle").attr("cx",800).attr("cy",30).attr("r", 6).style("fill", "#C7EFCF")
+	svg_age1.append("circle").attr("cx",800).attr("cy",60).attr("r", 6).style("fill", "#FE5F55")
+	svg_age1.append("text").attr("x", 810).attr("y", 30).text("Male").style("font-size", "15px").attr("alignment-baseline","middle")
+	svg_age1.append("text").attr("x", 810).attr("y", 60).text("Female").style("font-size", "15px").attr("alignment-baseline","middle")
+
+// syntax references were taken from https://www.d3-graph-gallery.com/
+
+</script>
+</body>
+</html>

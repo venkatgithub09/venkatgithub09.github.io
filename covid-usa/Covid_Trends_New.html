@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Trend analysis of new cases and deaths</title>
+    <meta charset="utf-8">
+    <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+	<style type="text/css">
+
+/* On mouse hover, lighten state color */
+path:hover {
+	fill-opacity: .7;
+}
+
+h1 {text-align: center;
+background-color:aliceblue;
+}
+
+/* Style for Custom Tooltip */
+.tooltip {   
+ 	position: absolute;           
+	text-align: center;           
+	width: auto;                  
+	height: auto;                 
+	padding: 2px;             
+	font: 12px sans-serif;        
+	background: white;   
+	border: 0px;      
+	border-radius: 8px;           
+	pointer-events: none;         
+}
+
+
+/* Legend Font Style */
+body {
+	font: 11px sans-serif;
+}
+
+/* Legend Position Style */
+.legend {
+	position:absolute;
+	left:800px;
+	top:350px;
+}
+
+ .tooltip-date, .tooltip-likes {
+        font-weight: bold;
+    }
+	
+</style>
+
+</head>
+<body>
+
+<h1> Covid trend analysis of New Cases and Deaths - USA</h1> 
+
+
+<p style="font-family:calibri;font-size:130%" align="justify"><br>The following Charts shows the New Covid cases and Deaths trends. The blue bars shows the daily new cases or deaths. The red line on top of blue bars show the average 7-day trend.
+The new cases surged from mid of march to April and stayed faltten until June where lockdown was in place. The new cases started to surge from mid of June as many states eased the lock down, However the death count was decreased from mid june
+although there are more number cases reported compared to March.</p>
+
+<p style="font-family:calibri;font-size:130%" align="justify"><br> Click on button <b> Cases </b> - for new cases and 7-day moving average<b>(Red line)</b> and <b> Deaths </b> - for new deaths and 7-day moving average<b>(Red line)</b>.</p>
+
+<form action="Covid_Impact_Age Group.html" style="float: right"> <input type="submit" value="Next Slide"/> </form>
+<form action="Covid_US map.html" style="float: right"> <input type="submit" value="Prev Slide"/> </form>
+
+
+<button onclick="update('Cases')">Cases</button>
+<button onclick="update('Deaths')">Deaths</button>
+
+
+
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+<p style="font-family:calibri;font-size:100%" align="justify">Dataset source from Johns Hopkins University and CDC </p>
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 20, right: 30, bottom: 30, left: 60},
+    width = 1200 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+	 tooltip = { width: 100, height: 100, x: 10, y: -30 };
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// Add X axis --> it is a date format
+//var x = d3.scaleTime().range([ 0, width ]);
+//var xAxis = d3.axisBottom().scale(x);
+
+     // Initialize the X axis
+var x = d3.scaleTime().range([ 0, width ]);
+var xAxis = svg.append("g").attr("transform", "translate(0," + height + ")")
+			
+ 
+			
+// Add Y axis
+var y = d3.scaleLinear().range([height, 0 ]);
+var yAxis = svg.append("g")
+  .attr("class","myYaxis")
+  
+
+// Append Div for tooltip to SVG
+var div = d3.select("#my_dataviz")
+		    .append("div")   
+    		.attr("class", "tooltip")               
+    		.style("opacity", 0);
+			
+ 
+    //Create arrow for annotation
+        svg.append("svg:defs").append("svg:marker")
+            .attr("id", "lineant")
+            .attr("refX", 6)
+            .attr("refY", 6)
+            .attr("markerWidth", 20)
+            .attr("markerHeight", 20)
+            .attr("markerUnits","userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M 0 0 12 6 0 12 3 6")
+            .style("fill", "red");
+
+        // circle for annotation
+
+        svg.append("circle")
+            .attr("cx", 970)
+            .attr("cy", 250)
+            .attr("r", 160)
+            .style("stroke", "red")
+            .style("stroke-width",5)
+            .style("stroke-dasharray", ("4, 4"))
+            .style("fill","none");
+
+
+        //line for annotation
+        svg.append("line")
+            .attr("x1", 700)
+            .attr("y1", 85)
+            .attr("x2", 830)
+            .attr("y2", 120)
+
+            .attr("stroke-width", 2)
+            .attr("stroke", "red")
+            .attr("marker-end", "url(#lineant)");
+			
+		svg.append("text")
+            .attr("x",400)
+            .attr("y",65)
+            .attr("font-family","courier")
+            .attr("font-size",13)
+            .style("fill", "red")
+            .style("text-decoration", "underline")
+            .text("Covid Cases surged from Mid June, however deaths rate decreased at the same time")
+  
+// Create a function that takes a dataset as input and update the plot:
+
+function update(inputVar) {
+
+d3.csv("https://raw.githubusercontent.com/venkatgithub09/covid-d3-project/master/US_Daily_covid_trends.csv", function(data) {
+
+  // Create the X axis:
+  x.domain(d3.extent(data, function(d) { return new Date(d.Date); }));
+  xAxis.transition()
+    .duration(2000)
+    .call(d3.axisBottom(x))
+	.selectAll("text")
+    .attr("transform", "translate(0,0)rotate(-1)")
+    .style("text-anchor", "end");
+	
+	      // text label for the x axis
+            svg.append("text")
+                .attr("transform",
+                    "translate(" + (width / 2.3) + " ," +
+                    (height + margin.top + 20) + ")")
+                .style("text-anchor", "middle")
+                .text("Date");
+
+  // create the Y axis
+  y.domain([0, d3.max(data, function(d) { return +d[inputVar];   }) ]);
+  
+  
+	svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left)
+                .attr("x", 0 - (height / 2))
+                .attr("dy", "1em")
+                .style("text-anchor", "middle")
+                .text("New cases/Deaths");
+	
+	
+				
+   //color.domain(data.map(function (d){ return d.Group; }));
+	yAxis.transition().duration(2000).call(d3.axisLeft(y));
+
+  // Create a update selection: bind to the new data
+  var u_svg = svg.selectAll("rect")
+    .data(data)
+	.on("mouseover", function(d) {
+                        var info  = "<span><b> Date : </b>" + d.Date+ "</span><br/>" +
+                            "<b style='color: darkred'> Daily Cases: <b/>" + d.Cases + "</span></br>" +
+                            "<span style='color:palevioletred'><b> Avg 7 day cases: </b>" + d.Average_7Day_Cases + "</span></br>" +
+                            "<span style='color:red'><b> Daily Deaths: </b>" + d.Deaths + "</span></br>"
+
+                        div.html(info)
+                            .style("left", (d3.event.pageX  + 15 ) + "px")
+                            .style("top", (d3.event.pageY -30 ) + "px")
+                            .transition()
+                            .duration(200) // ms
+                            .style("opacity", .9) // started as 0!
+
+                    })
+
+                    // fade out tooltip on mouse out
+                    .on("mouseout", function(d) {
+                        div.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+							
+					})
+
+	
+	u_svg
+		.enter()
+        .append("rect")
+	    .merge(u_svg)
+        .transition()
+        .duration(3000)
+        .attr("x", function(d) { return x(new Date(d.Date)); })
+        .attr("y", function(d) { return y(d[inputVar]); })
+		.attr("width", 4)
+        .attr("height", function(d) { return height - y(d[inputVar]); })
+        .attr("fill", "#52E2FE")
+		
+	var u_line = svg.selectAll(".lineTest")
+    .data([data])
+	
+	  // Updata the line
+  u_line
+    .enter()
+    .append("path")
+    .attr("class","lineTest")
+    .merge(u_line)
+    .transition()
+    .duration(3000)
+    .attr("d", d3.line()
+      .x(function(d) { return x(new Date(d.Date)); })
+      .y(function(d) { 
+	    if (inputVar == 'Cases'){
+	  	  return y(d.Average_7Day_Cases)
+		 }
+		 else{
+		  return y(d.Average_7Day_Deaths)
+		  }
+		
+		  }))
+      .attr("fill", "none")
+      .attr("stroke", "red")
+      .attr("stroke-width", 2.5)
+	
+		
+    })
+
+
+
+
+}	
+ update('Cases')
+
+// At the beginning, I run the update function on the first dataset:
+
+// syntax references were taken from https://www.d3-graph-gallery.com/
+
+</script>
+</body>
+</html>
+
+
+
+
